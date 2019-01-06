@@ -10,8 +10,13 @@ class ZiteBase(ZeroWs):
     def getWrapperKey(self, address):
         return ZiteUtils.getWrapperkey(address)
 
-    def isDownloaded(self):
+    def isDownloaded(self, address=None):
+        if address:
+            return self.send("as", address, "siteInfo")["bad_files"] == 0
         return self.send("siteInfo")["bad_files"] == 0
 
-    def getFile(self, inner_path):
-        return super().getFile(inner_path)
+    # Domain: zeroid.bit,kxoid.bit etc.
+    def certSelect(self, address, cert_domain):
+        return self.send("as", "certSet", cert_domain)
+
+

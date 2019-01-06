@@ -14,14 +14,14 @@ class ZeroWs(ZeroWebSocketBase):
     def getZiteInfo(self, address):
         return self.send("as", address, "siteInfo")
 
-    def getFile(self, file, target_site=None):
+    def getFile(self, file, target_site=None, callback=None):
         if target_site:
-            return self.send("as", target_site, "fileGet", file)
+            return self.send("as", [target_site, "fileGet", file], callback)
         else:
-            return self.send("fileGet", file)
+            return self.send("fileGet", [file], callback)
 
-    def queryDb(self, address, query):
-        return self.send("as", address, "dbQuery", query)
+    def queryDb(self, address, query, callback=None):
+        self.send("as", [address, "dbQuery", query], callback)
 
 
 class ZeroWsException(Exception):

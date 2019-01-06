@@ -4,19 +4,26 @@ import socket
 import sys
 
 import websocket
+import threading
 
-from Config import *
+from Config import config
 
 
-class ZeroWebSocketBase(object):
-    def __init__(self, wrapper_key, address=ZeroNetAddr, secure=False):
+class ZeroWebSocketBase:
+    def __init__(self, wrapper_key, address=config.ZeroNetAddr, secure=False):
         try:
-            self.ws = websocket.create_connection(
-                "%s://%s/Websocket?wrapper_key=%s" % ("wss" if secure else "ws", address, wrapper_key))
-        except socket.error as e:
+            self.ws = websocket.WebSocketApp("%s://%s/Websocket?wrapper_key=%s" % ("wss" if secure else "ws", address, wrapper_key),
+                                             on_message=self.on_message,
+                                             on_error=self.on_error,
+                                             on_close=self.on_close)
+            self.ws.on_open = self.on_open
+            self.next_id = 1
+            self.waiting_cb = {}
+            t = threading.Thread(
+                target=self.ws.run_forever, name="ZeroWsThread")
+            t.start()
+        except socket.error:
             raise ZeroWebSocketBase.Error("Cannot open socket.")
-
-        self.next_id = 1000000
 
     def __enter__(self):
         return self
@@ -24,35 +31,40 @@ class ZeroWebSocketBase(object):
     def __exit__(self, exc_type, exc_value, traceback):
         self.ws.close()
 
-    def send(self, cmd, *args, **kwargs):
-        data = None
-        if len(args) == 0:
-            data = dict(cmd=cmd, params=kwargs, id=self.next_id)
-        elif len(kwargs) == 0:
-            data = dict(cmd=cmd, params=args, id=self.next_id)
+    def on_open(self):
+        self.send("siteInfo")
+
+    def on_message(self, message):
+        response = json.loads(message)
+        if response["cmd"] == "response":
+            if self.waiting_cb[response["to"]]:
+                self.waiting_cb[response["to"]]()
+            else:
+                print("Ws callback not found: \n {}".format(response))
+            self.next_id += 1
+        elif response["cmd"] == "error":
+            self.next_id += 1
+            raise ZeroWebSocketBase.Error(
+                *map(lambda x: re.sub(r"<[^<]+?>", "", x), response["params"].split("<br>")))
         else:
-            raise TypeError(
-                "Only args/kwargs alone are allowed in call to ZeroWebSocket")
+            print(response)
 
+    def on_error(self, error):
+        print(error)
+
+    def on_close(self):
+        pass
+
+    def send(self, cmd, args=[], callback=None):
+        self.waiting_cb[self.next_id] = callback
+        data = dict(cmd=cmd, params=args, id=self.next_id)
         self.ws.send(json.dumps(data))
-
-        while True:
-            try:
-                response = json.loads(self.ws.recv())
-            except websocket.WebSocketConnectionClosedException:
-                raise ZeroWebSocketBase.Error("Connection terminated.")
-
-            if response["cmd"] == "response" and response["to"] == self.next_id:
-                self.next_id += 1
-
-                if response["result"] is not None and "error" in response["result"]:
-                    raise ZeroWebSocketBase.Error(response["result"]["error"])
-                else:
-                    return response["result"]
-            elif response["cmd"] == "error":
-                self.next_id += 1
-                raise ZeroWebSocketBase.Error(
-                    *map(lambda x: re.sub(r"<[^<]+?>", "", x), response["params"].split("<br>")))
 
     class Error(Exception):
         pass
+
+
+if __name__ == "__main__":
+    import ZiteUtils
+    ws = ZeroWebSocketBase(ZiteUtils.getWrapperkey(
+        "1HeLLo4uzjaLetFx6NH3PMwFP3qbRbTf3D"))

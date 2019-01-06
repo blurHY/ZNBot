@@ -3,7 +3,7 @@ from time import sleep
 import requests
 
 import ZiteUtils
-from Config import *
+from Config import config
 from ZiteBase import ZiteBase
 
 
@@ -12,15 +12,17 @@ class ZeroHello(ZiteBase):  # Admin Site
 
     def __init__(self):
         try:
-            ZeroHelloKey = ZiteUtils.getWrapperkey(
-                ZeroHelloAddr)
+            self.ZeroHelloKey = ZiteUtils.getWrapperkey(self.ZeroHelloAddr)
         except:
-            requests.get("http://"+ZeroNetAddr,
+            requests.get("http://"+config.ZeroNetAddr,
                          headers={"ACCEPT": "text/html"})
             while True:
                 try:
-                    ZeroHelloKey = ZiteUtils.getWrapperkey(
-                        ZeroHelloAddr)
+                    self.ZeroHelloKey = ZiteUtils.getWrapperkey(
+                        self.ZeroHelloAddr)
                 except:
                     sleep(120)
-        super().__init__(ZeroHelloAddr)
+        super().__init__(self.ZeroHelloAddr)
+
+    def addSite(self, siteaddr):
+        self.send("siteAdd", siteaddr, lambda: None)

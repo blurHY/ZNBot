@@ -1,6 +1,7 @@
-from Config import *
+from Config import config
 from ZeroHello import ZeroHello
 
 
 class ZNBot(ZeroHello):
-    pass
+    def __init__(self):
+        pass
