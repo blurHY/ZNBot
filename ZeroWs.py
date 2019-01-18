@@ -14,7 +14,7 @@ class ZeroWs(ZeroWebSocketBase):
     def getZiteInfo(self, address):
         return self.send("as", address, "siteInfo")
 
-    def getFile(self, file, target_site=None, callback=None):
+    def getFile(self, file, callback=None, target_site=None):
         if target_site:
             return self.send("as", [target_site, "fileGet", file], callback)
         else:

@@ -3,10 +3,10 @@ from os.path import join
 
 class Config:
     def __init__(self):
-        self._RootDir = '/ZeroBundle/ZeroNet'
+        self._RootDir = ""
         self._sitesJson = ""
 
-        self.RootDir = 'D:\\ZeroNet'
+        self.RootDir = "/ZeroBundle/ZeroNet"
         self.DataDir = join(self.RootDir, "data")
         self.ZeroNetAddr = u"127.0.0.1:43110"
 
@@ -17,7 +17,7 @@ class Config:
     @RootDir.setter
     def RootDir(self, value):
         self._RootDir = value
-        self.DataDir = join(value, 'data')
+        self.DataDir = join(value, "data")
         self._sitesJson = join(self.DataDir, "sites.json")
 
     @property
