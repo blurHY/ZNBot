@@ -12,6 +12,7 @@ from Config import config
 class ZeroWebSocketBase:
     def __init__(self, wrapper_key, address=config.ZeroNetAddr, secure=False):
         try:
+            # websocket.enableTrace(True)
             self.ws = websocket.WebSocketApp(
                 "%s://%s/Websocket?wrapper_key=%s"
                 % ("wss" if secure else "ws", address, wrapper_key),
@@ -33,20 +34,18 @@ class ZeroWebSocketBase:
     def __exit__(self, exc_type, exc_value, traceback):
         self.ws.close()
 
+    # Note: Do things after socket open
     def on_open(self):
-        pass
+        print("socket open")
 
     def on_message(self, message):
         response = json.loads(message)
-        print("Message", response)
         if response["cmd"] == "response":
             if self.waiting_cb[response["to"]]:
                 self.waiting_cb[response["to"]](response["result"])
             else:
                 print("Ws callback not found: \n {}".format(response))
-            self.next_id += 1
         elif response["cmd"] == "error":
-            self.next_id += 1
             raise ZeroWebSocketBase.Error(
                 *map(
                     lambda x: re.sub(r"<[^<]+?>", "", x),
@@ -66,6 +65,7 @@ class ZeroWebSocketBase:
         self.waiting_cb[self.next_id] = callback
         data = dict(cmd=cmd, params=args, id=self.next_id)
         self.ws.send(json.dumps(data))
+        self.next_id += 1
 
     class Error(Exception):
         pass

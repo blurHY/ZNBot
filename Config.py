@@ -6,7 +6,7 @@ class Config:
         self._RootDir = ""
         self._sitesJson = ""
 
-        self.RootDir = "/ZeroBundle/ZeroNet"
+        self.RootDir = "D:/ZeroNet"
         self.DataDir = join(self.RootDir, "data")
         self.ZeroNetAddr = u"127.0.0.1:43110"
 
